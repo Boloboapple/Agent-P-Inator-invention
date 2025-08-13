@@ -375,6 +375,7 @@ function startNewMission() {
 
     // Clear and reset canvas for the initial state
     clearCanvas();
+    // This is the initial "title screen" drawing, before briefing
     drawDoofenshmirtz(gameCanvas.width * 0.5, gameCanvas.height, 'standing');
     drawInator(gameCanvas.width * 0.2, gameCanvas.height * 0.8, false);
 }
@@ -605,4 +606,102 @@ function handleMissionAction(action, obstacle) {
             outcomeMessage = `You found a hidden bypass around the ${obstacle}. Good thinking!`;
             missionSuccess = true;
         } else {
-            outcomeMessage = `You searched for an alternate route but found nothing useful around
+            outcomeMessage = `You searched for an alternate route but found nothing useful around the ${obstacle}.`;
+        }
+    }
+
+    missionFeedback.textContent = outcomeMessage;
+    missionFeedback.style.color = missionSuccess ? '#2ecc71' : '#e74c3c';
+
+    if (missionSuccess) {
+        // Redraw scene for confrontation: Doof closer to Inator, Inator active
+        clearCanvas();
+        drawDoofenshmirtz(gameCanvas.width * 0.7, gameCanvas.height, 'standing'); // Doof moves towards Inator's side
+        drawInator(gameCanvas.width * 0.8, gameCanvas.height, true); // Inator active
+
+        setTimeout(confrontInator, 1500);
+    } else {
+        setTimeout(() => {
+            missionFeedback.textContent = "You need to try another approach to get past this obstacle!";
+            missionFeedback.style.color = '#e74c3c';
+            displayMissionChoices(obstacle); // Let them try again
+        }, 3000);
+    }
+}
+
+/**
+ * Handles the final confrontation with the Inator.
+ */
+function confrontInator() {
+    missionChoices.innerHTML = '';
+    missionFeedback.textContent = '';
+
+    missionScenario.innerHTML = `You've bypassed the defenses and reached the **${currentInator.name}**! Dr. Doofenshmirtz is monologuing as usual, gloating about his plan to ${currentInator.plot}. You need to disable the Inator!`;
+
+    const requiredDisableItemId = currentInator.weakness; // Use the specific weakness
+    const requiredDisableItem = ALL_AVAILABLE_ITEMS.find(item => item.id === requiredDisableItemId);
+
+    if (requiredDisableItem && playerInventory.some(item => item.id === requiredDisableItem.id)) {
+        const button = document.createElement('button');
+        button.textContent = `Use your ${requiredDisableItem.name} to disable the Inator!`;
+        button.addEventListener('click', () => {
+            // Success! Redraw Doof defeated and Inator idle
+            clearCanvas();
+            drawDoofenshmirtz(gameCanvas.width * 0.9, gameCanvas.height, 'defeated'); // Doof defeated, pushed far right
+            drawInator(gameCanvas.width * 0.8, gameCanvas.height, false); // Inator idle
+
+            missionScenario.innerHTML = `**SUCCESS!** You used your ${requiredDisableItem.name} to disable the **${currentInator.name}**! Dr. Doofenshmirtz shouts "Curse you, Perry the Platypus!" as his plan to ${currentInator.plot} is foiled!`;
+            missionFeedback.textContent = "Mission Accomplished, Agent P!";
+            missionFeedback.style.color = '#2ecc71';
+            missionChoices.innerHTML = '';
+            newMissionBtn.classList.remove('hidden');
+            resetGameBtn.classList.add('hidden');
+        });
+        missionChoices.appendChild(button);
+    } else {
+        // Failure! Redraw Doof triumphant and Inator active
+        clearCanvas();
+        drawDoofenshmirtz(gameCanvas.width * 0.1, gameCanvas.height, 'triumphant'); // Doof triumphant, on left
+        drawInator(gameCanvas.width * 0.8, gameCanvas.height, true); // Inator remains active
+
+        missionScenario.innerHTML = `You've reached the Inator, but you don't have the right tool to disable it! Dr. Doofenshmirtz's plan to ${currentInator.plot} succeeds!`;
+        missionFeedback.textContent = "MISSION FAILED! You didn't bring the right gadget!";
+        missionFeedback.style.color = '#e74c3c';
+        resetGameBtn.classList.remove('hidden');
+        newMissionBtn.classList.add('hidden');
+    }
+}
+
+// Function to restart the game
+function resetGame() {
+    startNewMission(); // Simply restart the whole flow
+}
+
+
+// --- EVENT LISTENERS ---
+startMissionBtn.addEventListener('click', showItemSelectionScreen);
+confirmSelectionBtn.addEventListener('click', handleItemSelection);
+proceedToMissionBtn.addEventListener('click', startMissionGameplay);
+newMissionBtn.addEventListener('click', startNewMission);
+resetGameBtn.addEventListener('click', resetGame);
+
+// --- INITIAL GAME START ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Ensure the briefing area is visible initially
+    briefingArea.classList.remove('hidden');
+    startMissionBtn.style.display = 'block'; // Make sure the button is explicitly visible
+
+    // Hide other sections
+    itemSelectionArea.classList.add('hidden');
+    missionStartArea.classList.add('hidden');
+    missionArea.classList.add('hidden');
+    resetGameBtn.classList.add('hidden');
+    newMissionBtn.classList.add('hidden');
+
+    // Initial message on load
+    monogramMessage.innerHTML = "Agent P, standby for mission briefing. Doofenshmirtz is up to no good again!";
+
+    // Draw initial scene on canvas (Doof and Inator)
+    drawDoofenshmirtz(gameCanvas.width * 0.5, gameCanvas.height, 'standing'); // Center Doof
+    drawInator(gameCanvas.width * 0.2, gameCanvas.height * 0.8, false); // Inator off to side
+});
