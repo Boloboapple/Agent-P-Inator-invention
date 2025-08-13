@@ -12,7 +12,18 @@ const selectionFeedback = document.getElementById('selection-feedback');
 
 const missionStartArea = document.getElementById('mission-start-area');
 const selectedItemsList = document.getElementById('selected-items-list');
+const proceedToMissionBtn = document.getElementById('proceed-to-mission-btn');
 const newMissionBtn = document.getElementById('new-mission-btn');
+
+const missionArea = document.getElementById('mission-area');
+const missionScenario = document.getElementById('mission-scenario');
+const missionChoices = document.getElementById('mission-choices');
+const missionFeedback = document.getElementById('mission-feedback');
+const resetGameBtn = document.getElementById('reset-game-btn');
+
+// --- CANVAS ELEMENTS ---
+const gameCanvas = document.getElementById('gameCanvas');
+const ctx = gameCanvas.getContext('2d'); // This is your drawing context!
 
 // --- GAME DATA ---
 const INATOR_PREFIXES = [
@@ -41,84 +52,271 @@ const DOOF_PLOTS = [
 const EFFECT_DETAILS = {
     "Shrink": {
         challenge: "creates tiny passages and makes crucial components hard to reach.",
-        suggestedItems: ["jetBoots", "grapplingHook", "enlargementPill"]
+        suggestedItems: ["jetBoots", "grapplingHook", "enlargementPill"],
+        obstacles: ["small vent", "high shelf", "tight squeeze"],
+        weakness: "enlargementPill"
     },
     "Growth": {
         challenge: "causes objects to expand, blocking paths and making areas unstable.",
-        suggestedItems: ["laserPen", "explosiveFloss", "miniChainsaw"]
+        suggestedItems: ["laserPen", "explosiveFloss", "miniChainsaw"],
+        obstacles: ["giant potted plant", "enlarged door", "heavy debris pile"],
+        weakness: "miniChainsaw"
     },
     "Flatten": {
         challenge: "compresses areas, creating narrow gaps and crushing hazards.",
-        suggestedItems: ["disguiseKit", "jetBoots", "portableTunnelDigger"]
+        suggestedItems: ["disguiseKit", "jetBoots", "portableTunnelDigger"],
+        obstacles: ["narrow corridor", "crushed pipe", "flattened security bot"],
+        weakness: "portableTunnelDigger"
     },
     "Monotony": {
         challenge: "dulls senses and makes movement sluggish, requiring sharp focus.",
-        suggestedItems: ["caffeinePill", "whoopeeCushion", "smokeBomb"]
+        suggestedItems: ["caffeinePill", "whoopeeCushion", "smokeBomb"],
+        obstacles: ["droning hum", "sleepy guard", "slow-moving laser grid"],
+        weakness: "caffeinePill"
     },
     "Elevator": {
         challenge: "removes vertical access and causes sudden drops.",
-        suggestedItems: ["grapplingHook", "jetBoots", "emergencyParachute"]
+        suggestedItems: ["grapplingHook", "jetBoots", "emergencyParachute"],
+        obstacles: ["missing staircase", "collapsed floor", "deep chasm"],
+        weakness: "grapplingHook"
     },
     "Color-Changing": {
         challenge: "confuses sensors and camouflages enemies, requiring optical aids.",
-        suggestedItems: ["infraredGoggles", "colorCorrectingSpray", "reflectiveShield"]
+        suggestedItems: ["infraredGoggles", "colorCorrectingSpray", "reflectiveShield"],
+        obstacles: ["shifting walls", "camouflaged Norm-Bot", "color-coded laser grid"],
+        weakness: "colorCorrectingSpray"
     },
     "Stinky": {
         challenge: "emits foul odors, affecting visibility and requiring breathing apparatus.",
-        suggestedItems: ["gasMask", "portableFan", "deodorizerSpray"]
+        suggestedItems: ["gasMask", "portableFan", "deodorizerSpray"],
+        obstacles: ["noxious gas vent", "stinky sludge puddle", "odor-sensitive alarm"],
+        weakness: "gasMask"
     },
     "Spinning": {
         challenge: "causes dizziness and makes platforms unstable.",
-        suggestedItems: ["stabilizerShoes", "magnetizedBoots", "antiNauseaPatch"]
+        suggestedItems: ["stabilizerShoes", "magnetizedBoots", "antiNauseaPatch"],
+        obstacles: ["rotating floor", "spinning platforms", "dizzying lights"],
+        weakness: "stabilizerShoes"
     },
     "Sticky": {
         challenge: "traps objects and slows movement, making quick escapes difficult.",
-        suggestedItems: ["antiStickSpray", "greaseGun", "escapePod"]
+        suggestedItems: ["antiStickSpray", "greaseGun", "escapePod"],
+        obstacles: ["sticky floor", "goo trap", "adhesive-covered lever"],
+        weakness: "antiStickSpray"
     },
     "Magnetic": {
         challenge: "pulls metallic objects and disables electronics, hindering gadget use.",
-        suggestedItems: ["nonMetallicGrapplingHook", "rubberSuit", "empDevice"]
+        suggestedItems: ["nonMetallicGrapplingHook", "rubberSuit", "empDevice"],
+        obstacles: ["strong magnetic field", "malfunctioning metal door", "attracting debris"],
+        weakness: "empDevice"
     }
 };
 
 const ALL_AVAILABLE_ITEMS = [
-    { id: "grapplingHook", name: "Grappling Hook", desc: "Allows vertical ascension and traversal over gaps." },
-    { id: "jetBoots", name: "Jet Boots", desc: "Provides short bursts of flight for quick movement or dodging." },
-    { id: "laserPen", name: "Laser Pen", desc: "Cuts through thin materials and activates distant switches." },
-    { id: "disguiseKit", name: "Disguise Kit", desc: "Temporarily blend in with specific human types." },
-    { id: "explosiveFloss", name: "Explosive Dental Floss", desc: "Creates small detonations for distractions or clearing debris." },
-    { id: "universalRemote", name: "Universal Remote", desc: "Controls certain electronic devices." },
-    { id: "rubberDuckie", name: "Rubber Duckie", desc: "A decoy, or surprisingly buoyant." },
-    { id: "reconDrone", name: "Recon Drone", desc: "Provides advanced intel on mission layout." },
-    { id: "enlargementPill", name: "Enlargement Pill", desc: "Temporarily increases size to reach high places or push heavy objects." },
-    { id: "miniChainsaw", name: "Miniature Chainsaw", desc: "Quickly cuts through large obstacles." },
-    { id: "portableTunnelDigger", name: "Portable Tunnel Digger", desc: "Creates small tunnels through soft ground." },
-    { id: "caffeinePill", name: "Caffeine Pill", desc: "Boosts Agent P's alertness and speed temporarily." },
-    { id: "whoopeeCushion", name: "Whoopee Cushion", desc: "A classic distraction, effective on Norm-Bots with poor hearing." },
-    { id: "smokeBomb", name: "Brightly Colored Smoke Bomb", desc: "Obscures vision, useful for escapes or bypassing sensors." },
-    { id: "emergencyParachute", name: "Emergency Parachute", desc: "Softens unexpected drops." },
-    { id: "infraredGoggles", name: "Infrared Goggles", desc: "Detects heat signatures and hidden laser grids." },
-    { id: "colorCorrectingSpray", name: "Color-Correcting Spray", desc: "Temporarily changes an object's color to bypass color-sensitive traps." },
-    { id: "reflectiveShield", name: "Reflective Shield", desc: "Bounces back laser beams and other light-based attacks." },
-    { id: "gasMask", name: "Gas Mask", desc: "Protects against noxious fumes." },
-    { id: "portableFan", name: "Portable Fan", desc: "Clears light gases or activates wind-sensitive mechanisms." },
-    { id: "deodorizerSpray", name: "Deodorizer Spray", desc: "Neutralizes strong odors." },
-    { id: "stabilizerShoes", name: "Stabilizer Shoes", desc: "Reduces effects of unstable or spinning surfaces." },
-    { id: "magnetizedBoots", name: "Magnetized Boots", desc: "Allows walking on metallic ceilings or walls." },
-    { id: "antiNauseaPatch", name: "Anti-Nausea Patch", desc: "Prevents disorientation from spinning effects." },
-    { id: "antiStickSpray", name: "Anti-Stick Spray", desc: "Removes sticky residues and prevents adhesion." },
-    { id: "greaseGun", name: "Grease Gun", desc: "Lubricates mechanisms or makes surfaces slippery." },
-    { id: "escapePod", name: "Emergency Escape Pod", desc: "A last resort for mission abort or quick evasion." },
-    { id: "nonMetallicGrapplingHook", name: "Non-Metallic Grappling Hook", desc: "A specialized grappling hook unaffected by magnetism." },
-    { id: "rubberSuit", name: "Rubber Suit", desc: "Provides insulation against electrical and magnetic fields." },
-    { id: "empDevice", name: "EMP Device", desc: "Disables electronic devices in a small radius." }
+    { id: "grapplingHook", name: "Grappling Hook", desc: "Allows vertical ascension and traversal over gaps.", type: "movement" },
+    { id: "jetBoots", name: "Jet Boots", desc: "Provides short bursts of flight for quick movement or dodging.", type: "movement" },
+    { id: "laserPen", name: "Laser Pen", desc: "Cuts through thin materials and activates distant switches.", type: "utility" },
+    { id: "disguiseKit", name: "Disguise Kit", desc: "Temporarily blend in with specific human types.", type: "stealth" },
+    { id: "explosiveFloss", name: "Explosive Dental Floss", desc: "Creates small detonations for distractions or clearing debris.", type: "disruption" },
+    { id: "universalRemote", name: "Universal Remote", desc: "Controls certain electronic devices.", type: "utility" },
+    { id: "rubberDuckie", name: "Rubber Duckie", desc: "A decoy, or surprisingly buoyant.", type: "distraction" },
+    { id: "reconDrone", name: "Recon Drone", desc: "Provides advanced intel on mission layout.", type: "intel" },
+    { id: "enlargementPill", name: "Enlargement Pill", desc: "Temporarily increases size to reach high places or push heavy objects.", type: "utility" },
+    { id: "miniChainsaw", name: "Miniature Chainsaw", desc: "Quickly cuts through large obstacles.", type: "disruption" },
+    { id: "portableTunnelDigger", name: "Portable Tunnel Digger", desc: "Creates small tunnels through soft ground.", type: "movement" },
+    { id: "caffeinePill", name: "Caffeine Pill", desc: "Boosts Agent P's alertness and speed temporarily.", type: "utility" },
+    { id: "whoopeeCushion", name: "Whoopee Cushion", desc: "A classic distraction, effective on Norm-Bots with poor hearing.", type: "distraction" },
+    { id: "smokeBomb", name: "Brightly Colored Smoke Bomb", desc: "Obscures vision, useful for escapes or bypassing sensors.", type: "stealth" },
+    { id: "emergencyParachute", name: "Emergency Parachute", desc: "Softens unexpected drops.", type: "safety" },
+    { id: "infraredGoggles", name: "Infrared Goggles", desc: "Detects heat signatures and hidden laser grids.", type: "intel" },
+    { id: "colorCorrectingSpray", name: "Color-Correcting Spray", desc: "Temporarily changes an object's color to bypass color-sensitive traps.", type: "utility" },
+    { id: "reflectiveShield", name: "Reflective Shield", desc: "Bounces back laser beams and other light-based attacks.", type: "utility" },
+    { id: "gasMask", name: "Gas Mask", desc: "Protects against noxious fumes.", type: "safety" },
+    { id: "portableFan", name: "Portable Fan", desc: "Clears light gases or activates wind-sensitive mechanisms.", type: "utility" },
+    { id: "deodorizerSpray", name: "Deodorizer Spray", desc: "Neutralizes strong odors.", type: "utility" },
+    { id: "stabilizerShoes", name: "Stabilizer Shoes", desc: "Reduces effects of unstable or spinning surfaces.", type: "movement" },
+    { id: "magnetizedBoots", name: "Magnetized Boots", desc: "Allows walking on metallic ceilings or walls.", type: "movement" },
+    { id: "antiNauseaPatch", name: "Anti-Nausea Patch", desc: "Prevents disorientation from spinning effects.", type: "safety" },
+    { id: "antiStickSpray", name: "Anti-Stick Spray", desc: "Removes sticky residues and prevents adhesion.", type: "utility" },
+    { id: "greaseGun", name: "Grease Gun", desc: "Lubricates mechanisms or makes surfaces slippery.", type: "utility" },
+    { id: "escapePod", name: "Emergency Escape Pod", desc: "A last resort for mission abort or quick evasion.", type: "safety" },
+    { id: "nonMetallicGrapplingHook", name: "Non-Metallic Grappling Hook", desc: "A specialized grappling hook unaffected by magnetism.", type: "movement" },
+    { id: "rubberSuit", name: "Rubber Suit", desc: "Provides insulation against electrical and magnetic fields.", type: "safety" },
+    { id: "empDevice", name: "EMP Device", desc: "Disables electronic devices in a small radius.", type: "disruption" }
 ];
 
 // --- GAME STATE VARIABLES ---
 let currentInator = null;
 let playerInventory = [];
 const MAX_INVENTORY_SLOTS = 3;
-let currentlyDisplayedItems = []; // To keep track of what's shown to the user for selection
+let currentlyDisplayedItems = [];
+
+// --- CANVAS DRAWING FUNCTIONS ---
+
+/**
+ * Clears the entire canvas.
+ */
+function clearCanvas() {
+    ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+}
+
+/**
+ * Draws Doofenshmirtz on the canvas.
+ * @param {number} x - The x-coordinate for Doof's position (center of his base).
+ * @param {number} y - The y-coordinate for Doof's position (bottom of his feet).
+ * @param {string} pose - 'standing', 'defeated', 'triumphant'.
+ */
+function drawDoofenshmirtz(x, y, pose = 'standing') {
+    const scale = 0.8; // Adjust overall size
+    const bodyColor = '#4e6d99'; // Doof's dark teal/blue lab coat
+    const skinColor = '#e7b583'; // Peach/light brown for skin
+    const hairColor = '#333333'; // Dark grey/black for hair
+    const eyeColor = '#ffffff';
+    const pupilColor = '#000000';
+    const beltColor = '#222222';
+    const shoeColor = '#333333';
+
+    ctx.save();
+    ctx.translate(x, y); // Move origin to Doof's base point
+    ctx.scale(scale, scale); // Scale Doof
+
+    // Body (Lab Coat)
+    ctx.fillStyle = bodyColor;
+    ctx.beginPath();
+    ctx.roundRect(-40, -180, 80, 180, 10); // Main body rectangle with rounded corners
+    ctx.fill();
+    ctx.closePath();
+
+    // Arms
+    ctx.fillRect(-70, -170, 30, 100); // Left arm
+    ctx.fillRect(40, -170, 30, 100); // Right arm
+
+    // Hands
+    ctx.fillStyle = skinColor;
+    ctx.beginPath();
+    ctx.arc(-55, -70, 10, 0, Math.PI * 2); ctx.fill(); // Left hand
+    ctx.arc(55, -70, 10, 0, Math.PI * 2); ctx.fill(); // Right hand
+    ctx.closePath();
+
+    // Head
+    ctx.fillStyle = skinColor;
+    ctx.beginPath();
+    // Doof's head is somewhat pear-shaped with a prominent chin
+    ctx.ellipse(0, -220, 60, 80, 0, 0, Math.PI * 2); // Oval for head
+    ctx.fill();
+    ctx.closePath();
+
+    // Nose (Distinctive)
+    ctx.fillStyle = skinColor;
+    ctx.beginPath();
+    ctx.moveTo(10, -210);
+    ctx.lineTo(25, -200);
+    ctx.lineTo(10, -190);
+    ctx.fill();
+    ctx.closePath();
+
+    // Eyes
+    ctx.fillStyle = eyeColor;
+    ctx.beginPath();
+    ctx.arc(-20, -230, 10, 0, Math.PI * 2); ctx.fill(); // Left eye
+    ctx.arc(20, -230, 10, 0, Math.PI * 2); ctx.fill(); // Right eye
+    ctx.closePath();
+
+    ctx.fillStyle = pupilColor;
+    ctx.beginPath();
+    ctx.arc(-20, -230, 3, 0, Math.PI * 2); ctx.fill(); // Left pupil
+    ctx.arc(20, -230, 3, 0, Math.PI * 2); ctx.fill(); // Right pupil
+    ctx.closePath();
+
+    // Mouth (expression based on pose)
+    ctx.strokeStyle = '#000000';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    if (pose === 'standing') {
+        ctx.arc(0, -195, 15, 0, Math.PI, false); // Slight frown or neutral
+    } else if (pose === 'defeated') {
+        ctx.arc(0, -190, 20, 0, Math.PI); // Larger frown
+    } else if (pose === 'triumphant') {
+        ctx.arc(0, -200, 20, 0, Math.PI, true); // Smile
+    }
+    ctx.stroke();
+    ctx.closePath();
+
+    // Hair
+    ctx.fillStyle = hairColor;
+    ctx.beginPath();
+    ctx.moveTo(-60, -280);
+    ctx.lineTo(-40, -300);
+    ctx.lineTo(0, -290);
+    ctx.lineTo(40, -300);
+    ctx.lineTo(60, -280);
+    ctx.lineTo(0, -260); // Roughly outline the hair spike
+    ctx.fill();
+    ctx.closePath();
+
+    // Belt
+    ctx.fillStyle = beltColor;
+    ctx.fillRect(-50, -10, 100, 10);
+
+    // Feet/Shoes
+    ctx.fillStyle = shoeColor;
+    ctx.fillRect(-35, -5, 30, 5); // Left foot
+    ctx.fillRect(5, -5, 30, 5); // Right foot
+
+
+    // Restore context to its state before drawing Doof
+    ctx.restore();
+}
+
+/**
+ * Draws the Inator on the canvas.
+ * @param {number} x - X-coordinate for the Inator's base.
+ * @param {number} y - Y-coordinate for the Inator's base.
+ * @param {boolean} isActive - True if the Inator should show active state.
+ */
+function drawInator(x, y, isActive = false) {
+    const scale = 0.7; // Adjust size
+    const baseColor = '#555555'; // Grey for base
+    const mainBodyColor = '#990000'; // Red for main Inator body
+    const topPartColor = '#ffcc00'; // Yellow/gold for top
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+
+    // Base
+    ctx.fillStyle = baseColor;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 70, 20, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.closePath();
+
+    // Main Body
+    ctx.fillStyle = mainBodyColor;
+    ctx.fillRect(-50, -150, 100, 150);
+
+    // Top part (dome/emitter)
+    ctx.fillStyle = topPartColor;
+    ctx.beginPath();
+    ctx.arc(0, -150, 60, Math.PI, Math.PI * 2, true); // Half circle for dome top
+    ctx.fill();
+    ctx.closePath();
+
+    // Glowing effect if active
+    if (isActive) {
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = 'rgba(255, 255, 0, 0.8)'; // Yellow glow
+        ctx.fillStyle = 'rgba(255, 255, 0, 0.5)';
+        ctx.beginPath();
+        ctx.arc(0, -150, 50, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.closePath();
+        ctx.shadowBlur = 0; // Reset shadow
+    }
+
+    ctx.restore();
+}
+
 
 // --- FUNCTIONS ---
 
@@ -141,7 +339,8 @@ function generateRandomInator() {
         effect: randomEffectName,
         challengeDescription: effectDetails.challenge,
         plot: randomPlot,
-        suggestedItems: effectDetails.suggestedItems
+        suggestedItems: effectDetails.suggestedItems,
+        weakness: effectDetails.weakness
     };
 }
 
@@ -152,10 +351,14 @@ function startNewMission() {
     currentInator = generateRandomInator();
     playerInventory.length = 0; // Clear previous inventory
 
-    // Update UI elements for briefing
+    // Show briefing, hide others
     briefingArea.classList.remove('hidden');
     itemSelectionArea.classList.add('hidden');
     missionStartArea.classList.add('hidden');
+    missionArea.classList.add('hidden'); // Ensure mission area is hidden
+    resetGameBtn.classList.add('hidden'); // Hide reset button
+    newMissionBtn.classList.add('hidden'); // Hide new mission button after game restart
+
     selectionFeedback.textContent = '';
     itemInput.value = '';
 
@@ -167,8 +370,23 @@ function startNewMission() {
         His nefarious goal this time is ${currentInator.plot}.<br>
         Be warned, Agent P, this Inator's power <strong>${currentInator.challengeDescription}</strong>
     `;
-    startMissionBtn.style.display = 'none'; // Hide briefing button after brief
-    displayItemSelection(); // Immediately proceed to item selection for this flow
+    startMissionBtn.style.display = 'block'; // Show briefing button to start the flow
+    monogramMessage.style.marginBottom = '15px'; // Adjust spacing
+
+    // Clear and reset canvas for the initial state
+    clearCanvas();
+    drawDoofenshmirtz(gameCanvas.width * 0.5, gameCanvas.height, 'standing');
+    drawInator(gameCanvas.width * 0.2, gameCanvas.height * 0.8, false);
+}
+
+/**
+ * Handles the "Receive Mission Briefing" button click.
+ * Transitions from briefing to item selection.
+ */
+function showItemSelectionScreen() {
+    briefingArea.classList.add('hidden'); // Hide briefing
+    itemSelectionArea.classList.remove('hidden'); // Show item selection
+    displayItemSelection(); // Populate item list
 }
 
 /**
@@ -178,7 +396,6 @@ function displayItemSelection() {
     itemList.innerHTML = ''; // Clear previous items
     currentlyDisplayedItems = []; // Reset the list of items presented to the user
 
-    // Filter available items: prioritize suggested items, then add others
     let availableItemsForSelection = [];
 
     // Add suggested items first
@@ -195,8 +412,6 @@ function displayItemSelection() {
         !availableItemsForSelection.some(i => i.id === item.id)
     );
 
-    // Shuffle non-suggested items and add some more randomly
-    // Limit to about 5-7 extra general items to keep choices manageable
     const numExtraItems = Math.min(7, nonSuggestedItems.length);
     for (let i = 0; i < numExtraItems; i++) {
         const randomIndex = Math.floor(Math.random() * nonSuggestedItems.length);
@@ -206,21 +421,16 @@ function displayItemSelection() {
         }
     }
 
-    // Ensure we don't present too many options, maybe cap at 12-15 total
     if (availableItemsForSelection.length > 15) {
         availableItemsForSelection = availableItemsForSelection.slice(0, 15);
     }
 
-    // Populate the UI list and store for selection
     availableItemsForSelection.forEach((item, index) => {
         const li = document.createElement('li');
         li.innerHTML = `<span class="item-index">${index + 1}.</span> <strong>${item.name}</strong>: ${item.desc}`;
         itemList.appendChild(li);
-        currentlyDisplayedItems.push(item); // Store this item in our tracking array
+        currentlyDisplayedItems.push(item);
     });
-
-    briefingArea.classList.add('hidden'); // Hide briefing
-    itemSelectionArea.classList.remove('hidden'); // Show item selection
 }
 
 /**
@@ -229,13 +439,12 @@ function displayItemSelection() {
 function handleItemSelection() {
     const input = itemInput.value;
     const chosenIndices = input.split(',')
-                               .map(s => parseInt(s.trim()) - 1) // Convert to 0-indexed numbers
-                               .filter(n => !isNaN(n) && n >= 0 && n < currentlyDisplayedItems.length); // Filter invalid inputs
+                               .map(s => parseInt(s.trim()) - 1)
+                               .filter(n => !isNaN(n) && n >= 0 && n < currentlyDisplayedItems.length);
 
-    playerInventory.length = 0; // Reset inventory
-    selectionFeedback.textContent = ''; // Clear previous feedback
+    playerInventory.length = 0;
+    selectionFeedback.textContent = '';
 
-    // Use a Set to easily track unique item IDs and prevent duplicates
     const selectedItemIds = new Set();
     let selectedCount = 0;
 
@@ -263,7 +472,7 @@ function handleItemSelection() {
 }
 
 /**
- * Displays the confirmed mission loadout and prepares for the next mission.
+ * Displays the confirmed mission loadout.
  */
 function showMissionLoadout() {
     itemSelectionArea.classList.add('hidden');
@@ -275,21 +484,125 @@ function showMissionLoadout() {
         li.textContent = `- ${item.name}`;
         selectedItemsList.appendChild(li);
     });
+    proceedToMissionBtn.classList.remove('hidden');
+    newMissionBtn.classList.add('hidden');
 }
 
-// --- EVENT LISTENERS ---
-startMissionBtn.addEventListener('click', startNewMission);
-confirmSelectionBtn.addEventListener('click', handleItemSelection);
-newMissionBtn.addEventListener('click', startNewMission); // Allows starting a new mission after one is done
-
-// --- INITIAL GAME START ---
-document.addEventListener('DOMContentLoaded', () => {
-    // We'll initially show the briefing button, user clicks to start
-    briefingArea.classList.remove('hidden');
-    startMissionBtn.style.display = 'block';
-    itemSelectionArea.classList.add('hidden');
+/**
+ * Starts the actual mission gameplay phase.
+ */
+function startMissionGameplay() {
     missionStartArea.classList.add('hidden');
+    missionArea.classList.remove('hidden');
+    missionFeedback.textContent = '';
+    resetGameBtn.classList.add('hidden');
 
-    // Initial message on load
-    monogramMessage.innerHTML = "Agent P, standby for mission briefing. Doofenshmirtz is up to no good again!";
-});
+    // Draw initial mission scene with Doof at starting position and Inator idle
+    clearCanvas();
+    drawDoofenshmirtz(gameCanvas.width * 0.2, gameCanvas.height, 'standing'); // Doof on left
+    drawInator(gameCanvas.width * 0.8, gameCanvas.height, false); // Inator on right, idle
+
+    const inatorEffectObstacles = EFFECT_DETAILS[currentInator.effect].obstacles;
+    const currentObstacle = inatorEffectObstacles[Math.floor(Math.random() * inatorEffectObstacles.length)];
+
+    missionScenario.innerHTML = `You've infiltrated D.E.I.! The **${currentInator.name}** hums ominously in the distance. <br>Your path is blocked by a **${currentObstacle}**. What do you do?`;
+
+    displayMissionChoices(currentObstacle);
+}
+
+/**
+ * Displays available actions based on player's inventory and current obstacle.
+ * @param {string} obstacle - The current obstacle text.
+ */
+function displayMissionChoices(obstacle) {
+    missionChoices.innerHTML = ''; // Clear previous choices
+
+    const actions = [];
+    let hasRelevantItem = false;
+
+    // Add general actions (always available)
+    actions.push({ text: "Try to sneak past (risky)", action: "sneak" });
+    actions.push({ text: "Search for an alternate route", action: "search" });
+
+    // Add actions based on player's inventory and obstacle type
+    playerInventory.forEach(item => {
+        let actionText = `Use ${item.name}`;
+        let isRelevant = false;
+
+        if (currentInator.suggestedItems.includes(item.id)) {
+            isRelevant = true;
+        } else if (
+            (item.type === "movement" && (obstacle.includes("vent") || obstacle.includes("gap") || obstacle.includes("chasm") || obstacle.includes("high") || obstacle.includes("corridor"))) ||
+            (item.type === "disruption" && (obstacle.includes("blocked") || obstacle.includes("debris") || obstacle.includes("bot") || obstacle.includes("pipe"))) ||
+            (item.type === "stealth" && obstacle.includes("guard")) ||
+            (item.type === "utility" && (obstacle.includes("door") || obstacle.includes("lever") || obstacle.includes("sensor") || obstacle.includes("alarm") || obstacle.includes("fumes") || obstacle.includes("mechanisms") || obstacle.includes("lights"))) ||
+            (item.type === "safety" && (obstacle.includes("drop") || obstacle.includes("fumes") || obstacle.includes("unstable") || obstacle.includes("dizzying"))) ||
+            (item.type === "intel" && (obstacle.includes("hidden") || obstacle.includes("camouflaged") || obstacle.includes("grid")))
+        ) {
+            isRelevant = true;
+        }
+
+        if (isRelevant) {
+            actions.push({ text: actionText, action: `use_${item.id}` });
+            hasRelevantItem = true;
+        }
+    });
+
+    if (!hasRelevantItem && playerInventory.length > 0) {
+        missionFeedback.textContent = "Your current gadgets might not be ideal for this specific obstacle, Agent P. Proceed with caution!";
+        missionFeedback.style.color = 'orange';
+    } else {
+         missionFeedback.textContent = "";
+    }
+
+    actions.forEach((choice, index) => {
+        const button = document.createElement('button');
+        button.textContent = choice.text;
+        button.addEventListener('click', () => handleMissionAction(choice.action, obstacle));
+        missionChoices.appendChild(button);
+    });
+}
+
+/**
+ * Handles the player's chosen action during the mission.
+ * @param {string} action - The action chosen (e.g., "sneak", "use_grapplingHook").
+ * @param {string} obstacle - The current obstacle being faced.
+ */
+function handleMissionAction(action, obstacle) {
+    let outcomeMessage = "";
+    let missionSuccess = false;
+
+    if (action.startsWith("use_")) {
+        const itemId = action.substring(4);
+        const usedItem = ALL_AVAILABLE_ITEMS.find(item => item.id === itemId);
+
+        if (usedItem) {
+            const isSuggested = currentInator.suggestedItems.includes(usedItem.id);
+            const isTypeRelevant =
+                (usedItem.type === "movement" && (obstacle.includes("vent") || obstacle.includes("gap") || obstacle.includes("chasm") || obstacle.includes("high") || obstacle.includes("corridor"))) ||
+                (usedItem.type === "disruption" && (obstacle.includes("blocked") || obstacle.includes("debris") || obstacle.includes("bot") || obstacle.includes("pipe"))) ||
+                (usedItem.type === "stealth" && obstacle.includes("guard")) ||
+                (usedItem.type === "utility" && (obstacle.includes("door") || obstacle.includes("lever") || obstacle.includes("sensor") || obstacle.includes("alarm") || obstacle.includes("fumes") || obstacle.includes("mechanisms") || obstacle.includes("lights"))) ||
+                (usedItem.type === "safety" && (obstacle.includes("drop") || obstacle.includes("fumes") || obstacle.includes("unstable") || obstacle.includes("dizzying"))) ||
+                (usedItem.type === "intel" && (obstacle.includes("hidden") || obstacle.includes("camouflaged") || obstacle.includes("grid")));
+
+            if (isSuggested || isTypeRelevant) {
+                outcomeMessage = `You skillfully used your ${usedItem.name}! The ${obstacle} is bypassed.`;
+                missionSuccess = true;
+            } else {
+                outcomeMessage = `You tried to use your ${usedItem.name}, but it wasn't quite right for the ${obstacle}. You barely managed to avoid detection!`;
+            }
+        }
+    } else if (action === "sneak") {
+        if (Math.random() > 0.6) {
+            outcomeMessage = `You expertly snuck past the ${obstacle}. Nicely done!`;
+            missionSuccess = true;
+        } else {
+            outcomeMessage = `You attempted to sneak, but the ${obstacle} was tougher than expected. You were almost spotted!`;
+        }
+    } else if (action === "search") {
+        if (Math.random() > 0.5) {
+            outcomeMessage = `You found a hidden bypass around the ${obstacle}. Good thinking!`;
+            missionSuccess = true;
+        } else {
+            outcomeMessage = `You searched for an alternate route but found nothing useful around
