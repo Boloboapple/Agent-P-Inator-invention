@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agent P: Inator Intervention</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <h1>Agent P: Inator Intervention</h1>
+        <div id="briefing-area" class="game-section">
+            <h2>~Incoming Transmission from Major Monogram~</h2>
+            <p id="monogram-message"></p>
+            <button id="start-mission-btn">Receive Mission Briefing</button>
+        </div>
+
+        <div id="item-selection-area" class="game-section hidden">
+            <h2>~SELECT YOUR GADGETS~</h2>
+            <p>You can choose <span id="max-slots"></span> items.</p>
+            <ul id="item-list">
+                </ul>
+            <p>Enter the numbers of the items you want, separated by commas (e.g., 1,3,5).</p>
+            <input type="text" id="item-input" placeholder="e.g., 1, 3, 5">
+            <button id="confirm-selection-btn">Confirm Selection</button>
+            <p id="selection-feedback" class="feedback"></p>
+        </div>
+
+        <div id="mission-start-area" class="game-section hidden">
+            <h2>~MISSION LOADOUT CONFIRMED!~</h2>
+            <p>You have selected:</p>
+            <ul id="selected-items-list">
+                </ul>
+            <p>Good luck, Agent P! Perry the platypus noise! (ch-ch-ch-ch-ch)</p>
+            <p class="final-message">--- MISSION START! (Imagine the infiltration now!) ---</p>
+            <button id="new-mission-btn">Start New Mission</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
