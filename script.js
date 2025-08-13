@@ -328,6 +328,7 @@ function generateRandomInator() {
     const randomEffectName = INATOR_EFFECTS[Math.floor(Math.random() * INATOR_EFFECTS.length)];
     const randomPrefix = INATOR_PREFIXES[Math.floor(Math.random() * INATOR_PREFIXES.length)];
     const randomSuffix = INATOR_SUFFIXES[Math.floor(Math.random() * INATOR_SUFFIXES.length)]; // Will always be "-Inator" now
+    const randomPlot = DOOF_PLOTS[Math.floor(Math.random() * DOOF_PLOTS.length)]; // Select updated plot
 
     const effectDetails = EFFECT_DETAILS[randomEffectName];
 
@@ -337,7 +338,7 @@ function generateRandomInator() {
         name: inatorName,
         effect: randomEffectName,
         challengeDescription: effectDetails.challenge,
-        plot: randomPlot, // Will now be tied to Tri-State Area takeover
+        plot: randomPlot, // Now includes Tri-State Area takeover ambition
         suggestedItems: effectDetails.suggestedItems,
         weakness: effectDetails.weakness
     };
