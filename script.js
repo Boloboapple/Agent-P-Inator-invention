@@ -30,23 +30,23 @@ const INATOR_PREFIXES = [
     "De-", "Re-", "Mega-", "Mini-", "Super-", "Ultra-", "Anti-", "Giga-", "Micro-", "Hyper-"
 ];
 
+// MODIFIED: Ensure "Inator" is always at the end of the name
+const INATOR_SUFFIXES = ["-Inator"];
+
 const INATOR_EFFECTS = [
     "Shrink", "Growth", "Flatten", "Monotony", "Elevator", "Color-Changing", "Stinky", "Spinning", "Sticky", "Magnetic"
 ];
 
-const INATOR_SUFFIXES = [
-    "-Inator", "-izer", "-ifier", "-omatic", "-tron", "-inator 5000"
-];
-
+// MODIFIED: Doof's plots now explicitly tie into taking over the Tri-State Area
 const DOOF_PLOTS = [
-    "to make everyone's shoelaces untie",
-    "to turn all mailboxes into angry squirrels",
-    "to replace all elevator music with polka",
-    "to make everyone scratch their left ear every five minutes",
-    "to make all garden gnomes dance uncontrollably",
-    "to swap everyone's left and right socks",
-    "to turn all garden hoses into rubber chickens",
-    "to make everyone's alarm clocks play banjo music"
+    "to make everyone's shoelaces untie, causing mass chaos to easily march into the Tri-State Area",
+    "to turn all mailboxes into angry squirrels, distracting the populace so he can seize control of the Tri-State Area without resistance",
+    "to replace all elevator music with polka, driving citizens to distraction and making his takeover of the Tri-State Area inevitable",
+    "to make everyone scratch their left ear every five minutes, disrupting daily life to smooth his conquest of the Tri-State Area",
+    "to make all garden gnomes dance uncontrollably, creating a diversion while he executes his master plan for the Tri-State Area",
+    "to swap everyone's left and right socks, leading to widespread discomfort and disorganization, paving the way for his Tri-State Area dominion",
+    "to turn all garden hoses into rubber chickens, causing a water shortage crisis that will force the Tri-State Area to surrender",
+    "to make everyone's alarm clocks play banjo music, ensuring widespread sleep deprivation and a weakened Tri-State Area ripe for the taking"
 ];
 
 const EFFECT_DETAILS = {
@@ -327,8 +327,7 @@ function drawInator(x, y, isActive = false) {
 function generateRandomInator() {
     const randomEffectName = INATOR_EFFECTS[Math.floor(Math.random() * INATOR_EFFECTS.length)];
     const randomPrefix = INATOR_PREFIXES[Math.floor(Math.random() * INATOR_PREFIXES.length)];
-    const randomSuffix = INATOR_SUFFIXES[Math.floor(Math.random() * INATOR_SUFFIXES.length)];
-    const randomPlot = DOOF_PLOTS[Math.floor(Math.random() * DOOF_PLOTS.length)];
+    const randomSuffix = INATOR_SUFFIXES[Math.floor(Math.random() * INATOR_SUFFIXES.length)]; // Will always be "-Inator" now
 
     const effectDetails = EFFECT_DETAILS[randomEffectName];
 
@@ -338,7 +337,7 @@ function generateRandomInator() {
         name: inatorName,
         effect: randomEffectName,
         challengeDescription: effectDetails.challenge,
-        plot: randomPlot,
+        plot: randomPlot, // Will now be tied to Tri-State Area takeover
         suggestedItems: effectDetails.suggestedItems,
         weakness: effectDetails.weakness
     };
@@ -384,16 +383,12 @@ function startNewMission() {
 /**
  * Handles the "Receive Mission Briefing" button click.
  * Transitions from briefing to item selection.
- * This function *just* handles the UI transition after `startNewMission` prepares the data.
+ * This function is the entry point from the initial briefing screen.
  */
 function showItemSelectionScreen() {
-    // The startNewMission() call handles the game state setup
-    // We only need to transition UI here if startNewMission() has already been called
-    // which it should be on initial DOMContentLoaded, or via the newMissionBtn.
-    // However, for the very FIRST "Receive Mission Briefing" click, startNewMission() hasn't
-    // generated an Inator yet. So, it should be explicitly called here to ensure data exists.
-    // If it's called again by newMissionBtn, it just resets.
-    startNewMission(); // Ensure game state is set up before showing items
+    // This call ensures currentInator is generated and the game state is reset
+    // every time the player clicks "Receive Mission Briefing" to start the mission flow.
+    startNewMission();
 
     briefingArea.classList.add('hidden'); // Hide briefing
     itemSelectionArea.classList.remove('hidden'); // Show item selection
