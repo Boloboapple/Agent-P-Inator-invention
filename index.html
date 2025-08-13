@@ -33,8 +33,22 @@
                 </ul>
             <p>Good luck, Agent P! Perry the platypus noise! (ch-ch-ch-ch-ch)</p>
             <p class="final-message">--- MISSION START! (Imagine the infiltration now!) ---</p>
-            <button id="new-mission-btn">Start New Mission</button>
+            <button id="proceed-to-mission-btn">Proceed to Mission</button>
+            <button id="new-mission-btn" class="hidden">Start New Mission</button>
         </div>
+
+        <div id="mission-area" class="game-section hidden">
+            <h2>~INFILTRATION IN PROGRESS~</h2>
+            <div class="mission-visuals">
+                <canvas id="gameCanvas" width="700" height="250"></canvas>
+            </div>
+            <p id="mission-scenario"></p>
+            <div id="mission-choices">
+                </div>
+            <p id="mission-feedback" class="feedback"></p>
+            <button id="reset-game-btn" class="hidden">Restart Game</button>
+        </div>
+
     </div>
 
     <script src="script.js"></script>
